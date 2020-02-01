@@ -1,193 +1,184 @@
-import React, { useEffect, useReducer, useState } from 'react';
-import Rectangle from './Rectangle';
+import React, { Fragment, useCallback } from 'react';
+import Bar from './Bar';
+import classes from './App.module.css';
+import { observable, decorate } from 'mobx';
+import { observer, useLocalStore } from 'mobx-react';
 
+/*
 let context = null;
 let oscillator = null;
 let gain = null;
 let frequencyBase = 0;
 let frequencyMultiplier = 1.3;
 
-let currentComparison = [{}, {}];
-let animationSpeed = 0;
+const storeProxy = new Proxy(new Store(), {
+  Height: function(target, property) {
+    if (property === 'length') {
+      return target.array.length;
+    }
+    return target.array[property];
+  },
+});
 
-const sortingReducer = (state, action) => {
-  switch (action.type) {
-    case 'RESET': {
-      const { length, max } = action;
-      return Array.from({ length }, () => Math.floor(Math.random() * max));
-    }
-    case 'COMPARE': {
-      const [j, min] = action.indices;
-      const [currentJ, currentMin] = currentComparison;
-      currentJ.backgroundColor = 'green';
-      currentMin.backgroundColor = 'green';
+const array = observable.array(
+  Array.from({ length: 500 }, () => ({
+    height: Math.floor(Math.random() * 100),
+    color: 'green',
+  }))
+);
 
-      currentComparison = [
-        document.getElementById(j).style,
-        document.getElementById(min).style,
-      ];
+const colorChanger = observable.object({
+  set: [],
+  compare: [],
+});
 
-      /*
-      oscillator.frequency.value = Math.pow(
-        parseFloat(currentComparison[0].height) + frequencyBase,
-        frequencyMultiplier
-      );
-      */
+observe(colorChanger, change => {
+  if (change.name === 'set') {
+    change.oldValue.color = 'green';
+    change.newValue.color = 'red';
+  }
+  if (change.name === 'set') {
+    change.oldValue.color = 'green';
+    change.newValue.color = 'red';
+  }
+});
+*/
 
-      currentComparison[0].backgroundColor = 'red';
-      currentComparison[1].backgroundColor = 'red';
-      return state;
+class Store {
+  array = [];
+  currentSelection = [{}, {}];
+
+  constructor(length) {
+    this.array = Array.from({ length }, () => ({
+      height: Math.floor(Math.random() * 100),
+      color: 'green',
+    }));
+  }
+
+  getHeight = index => {
+    return this.array[index].height;
+  };
+
+  setHeight = (index, value) => {
+    let { array } = this;
+    array[index].height = value;
+    array[index].color = 'green';
+  };
+
+  mergeSortCompare = (indexOne, indexTwo) => {
+    let { array } = this;
+    array[indexOne].color = 'pink';
+    array[indexTwo].color = 'red';
+  };
+
+  selectionSortSwap = (i, j) => {
+    const { array } = this;
+    [array[i].height, array[j].height] = [array[j].height, array[i].height];
+    this.compare(i, j, 'cyan');
+  };
+
+  compare = (indexOne, indexTwo) => {
+    const [prevOne, prevTwo] = this.currentSelection;
+    prevOne.color = 'green';
+    prevTwo.color = 'green';
+    this.array[indexOne].color = 'red';
+    this.array[indexTwo].color = 'red';
+    this.currentSelection = [this.array[indexOne], this.array[indexTwo]];
+  };
+}
+
+decorate(Store, { array: observable });
+
+const selectionSort = function*(store) {
+  const array = store.array;
+  for (let i = 0; i < array.length; i++) {
+    let min = i;
+    for (let j = i + 1; j < array.length; j++) {
+      yield store.compare(min, j);
+      if (array[j].height < array[min].height) {
+        min = j;
+      }
     }
-    case 'SWAP': {
-      const [i, min] = action.indices;
-      const style1 = document.getElementById(i).style;
-      const style2 = document.getElementById(min).style;
-      [style1.height, style2.height] = [style2.height, style1.height];
-      return state;
-    }
-    case 'SET': {
-      const { index, height } = action;
-      const style = document.getElementById(index).style;
-      style.height = `${height}%`;
-      /*
-      oscillator.frequency.value = Math.pow(
-        height + frequencyBase,
-        frequencyMultiplier
-      );
-      */
-      return state;
-    }
-    default: {
-      throw new Error('Invalid action.type!');
-    }
+    yield store.selectionSortSwap(i, min);
   }
 };
 
-function App() {
-  const [array, dispatchArray] = useReducer(sortingReducer, []);
+const mergeSort = store => {
+  const array = store.array;
 
-  useEffect(() => {
-    dispatchArray({ type: 'RESET', length: 400, max: 100 });
-    /*
-    context = new AudioContext();
-    oscillator = context.createOscillator();
-    gain = context.createGain();
-    gain.gain.value = 0;
-    oscillator.type = 'triangle';
-    oscillator.frequency.value = 0;
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start();
-
-    return () => {
-      oscillator.stop();
-    };
-    */
-  }, []);
-
-  const mergeSort = array => {
-    const recursiveMerge = function*(array, left, right) {
-      if (left < right) {
-        let mid = Math.floor((left + right) / 2);
-        yield* recursiveMerge(array, left, mid);
-        yield* recursiveMerge(array, mid + 1, right);
-        yield* merge(array, left, mid, right);
-      }
-    };
-
-    return recursiveMerge(array, 0, array.length - 1);
+  const recursiveMerge = function*(array, left, right) {
+    if (left < right) {
+      let mid = Math.floor((left + right) / 2);
+      yield* recursiveMerge(array, left, mid);
+      yield* recursiveMerge(array, mid + 1, right);
+      yield* merge(array, left, mid, right);
+    }
   };
 
   const merge = function*(array, start, mid, end) {
     const temp = [];
     let runner1 = start,
       runner2 = mid + 1;
-    for (let i = 0; i <= end - start; i++) {
+
+    for (let i = runner1; i <= end; i++) {
+      yield store.mergeSortCompare(
+        Math.min(runner1, mid),
+        Math.min(runner2, end)
+      );
       if (runner1 > mid) {
-        temp.push(array[runner2++]);
+        temp.push(array[runner2++].height);
       } else if (runner2 > end) {
-        temp.push(array[runner1++]);
-      } else if (array[runner1] <= array[runner2]) {
-        temp.push(array[runner1++]);
+        temp.push(array[runner1++].height);
+      } else if (array[runner1].height <= array[runner2].height) {
+        temp.push(array[runner1++].height);
       } else {
-        temp.push(array[runner2++]);
+        temp.push(array[runner2++].height);
       }
     }
     for (let i = 0; i < temp.length; i++) {
-      yield { type: 'SET', index: start, height: temp[i] };
-      array[start++] = temp[i];
+      yield store.setHeight(start++, temp[i]);
     }
   };
 
-  const selectionSort = function*(array) {
-    for (let i = 0; i < array.length; i++) {
-      let min = i;
-      for (let j = i + 1; j < array.length; j++) {
-        yield { type: 'COMPARE', indices: [j, min] };
-        if (array[j] < array[min]) {
-          min = j;
+  return recursiveMerge(array, 0, array.length - 1);
+};
+
+const App = observer(() => {
+  const store = useLocalStore(() => new Store(300));
+
+  const doSorting = useCallback(
+    sortGenerator => {
+      const steps = sortGenerator(store);
+
+      const animation = setInterval(() => {
+        const action = steps.next();
+        if (action.done) {
+          clearInterval(animation);
         }
-      }
-      [array[i], array[min]] = [array[min], array[i]];
-      yield { type: 'SWAP', indices: [i, min] };
-    }
-  };
-
-  const doSorting = sortingGenerator => {
-    const copy = [...array];
-    const steps = sortingGenerator(copy);
-
-    setInterval(() => {
-      const action = steps.next();
-      if (action.done) {
-        clearInterval();
-      } else dispatchArray(action.value);
-    }, animationSpeed);
-
-    /*
-    let j = 1;
-    for (const action of steps) {
-      // These timeouts do not execute until selectionSort completes.
-      // When they do start, the first couple of timeouts are executed immediately.
-      // I understand that those timeouts had completed while selectionSort was running,
-      // but would it be possible to have them execute while selectionSort is running
-      // so that the animation begins at the start and not ubruptly in the middle?
-      setTimeout(() => dispatchArray(action), j++ * animationSpeed);
-    }
-    */
-  };
-
-  const rectangles = array.map((height, index) => (
-    <Rectangle id={index} key={index} height={height} />
-  ));
+      }, 0);
+    },
+    [store]
+  );
 
   return (
-    <div>
-      <button
-        style={{ position: 'absolute', top: '0px', left: '0px' }}
-        onClick={() => doSorting(selectionSort)}
-      >
-        Selection Sort
-      </button>
-      <button
-        style={{ position: 'absolute', top: '40px', left: '0px' }}
-        onClick={() => doSorting(mergeSort)}
-      >
-        Merge Sort
-      </button>
-      <div
-        style={{
-          display: 'flex',
-          width: '100vw',
-          height: '100vh',
-          backgroundColor: 'black',
-          alignItems: 'flex-end',
-        }}
-      >
-        {rectangles}
+    <Fragment>
+      <ul className={classes.menu}>
+        <li>
+          <button onClick={() => doSorting(selectionSort)}>
+            Selection Sort
+          </button>
+        </li>
+        <li>
+          <button onClick={() => doSorting(mergeSort)}>Merge Sort</button>
+        </li>
+      </ul>
+      <div className={classes.barsContainer}>
+        {store.array.map((barData, index) => {
+          return <Bar key={index} id={index} barData={barData} />;
+        })}
       </div>
-    </div>
+    </Fragment>
   );
-}
+});
 
 export default App;
