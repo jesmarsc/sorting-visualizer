@@ -55,6 +55,12 @@ class Store {
     }));
   }
 
+  swap = (i, j) => {
+    const temp = this.array[i];
+    this.array[i] = this.array[j];
+    this.array[j] = temp;
+  };
+
   getHeight = index => {
     return this.array[index].height;
   };
@@ -72,8 +78,7 @@ class Store {
   };
 
   selectionSortSwap = (i, j) => {
-    const { array } = this;
-    [array[i].height, array[j].height] = [array[j].height, array[i].height];
+    this.swap(i, j);
     this.compare(i, j, 'cyan');
   };
 
@@ -143,6 +148,35 @@ const mergeSort = store => {
   return recursiveMerge(array, 0, array.length - 1);
 };
 
+const quickSort = store => {
+  const { array } = store;
+
+  const recursivePivot = function*(array, left, right) {
+    if (left < right) {
+      const pivotIndex = yield* pivot(array, left, right);
+      yield* recursivePivot(array, left, pivotIndex - 1);
+      yield* recursivePivot(array, pivotIndex + 1, right);
+    }
+  };
+
+  const pivot = function*(array, left, right) {
+    const pivot = array[right].height;
+    let i = left,
+      j = left;
+    while (i < right) {
+      if (array[i].height < pivot) {
+        yield store.selectionSortSwap(i, j);
+        j++;
+      }
+      i++;
+    }
+    yield store.selectionSortSwap(j, right);
+    return j;
+  };
+
+  return recursivePivot(array, 0, array.length - 1);
+};
+
 const App = observer(() => {
   const store = useLocalStore(() => new Store(300));
 
@@ -170,6 +204,9 @@ const App = observer(() => {
         </li>
         <li>
           <button onClick={() => doSorting(mergeSort)}>Merge Sort</button>
+        </li>
+        <li>
+          <button onClick={() => doSorting(quickSort)}>Quick Sort</button>
         </li>
       </ul>
       <div className={classes.barsContainer}>
