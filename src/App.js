@@ -53,6 +53,15 @@ class Store {
       height: Math.floor(Math.random() * 100),
       color: 'green',
     }));
+
+    /*
+
+    this.array = [
+      { height: 20, color: 'green' },
+      { height: 10, color: 'green' },
+      { height: 30, color: 'green' },
+    ];
+    */
   }
 
   swap = (i, j) => {
@@ -79,15 +88,15 @@ class Store {
 
   selectionSortSwap = (i, j) => {
     this.swap(i, j);
-    this.compare(i, j, 'cyan');
+    this.compare(i, j, 'red');
   };
 
-  compare = (indexOne, indexTwo) => {
+  compare = (indexOne, indexTwo, color) => {
     const [prevOne, prevTwo] = this.currentSelection;
     prevOne.color = 'green';
     prevTwo.color = 'green';
-    this.array[indexOne].color = 'red';
-    this.array[indexTwo].color = 'red';
+    this.array[indexOne].color = color;
+    this.array[indexTwo].color = color;
     this.currentSelection = [this.array[indexOne], this.array[indexTwo]];
   };
 }
@@ -99,7 +108,7 @@ const selectionSort = function*(store) {
   for (let i = 0; i < array.length; i++) {
     let min = i;
     for (let j = i + 1; j < array.length; j++) {
-      yield store.compare(min, j);
+      yield store.compare(min, j, 'red');
       if (array[j].height < array[min].height) {
         min = j;
       }
@@ -160,18 +169,30 @@ const quickSort = store => {
   };
 
   const pivot = function*(array, left, right) {
-    const pivot = array[right].height;
-    let i = left,
-      j = left;
-    while (i < right) {
-      if (array[i].height < pivot) {
-        yield store.selectionSortSwap(i, j);
-        j++;
+    const pivot = array[left].height;
+    let side = 'right';
+    while (left < right) {
+      yield store.compare(left, right, 'pink');
+      if (side === 'right') {
+        if (array[right].height < pivot) {
+          yield store.selectionSortSwap(left, right);
+          left++;
+          side = 'left';
+        } else {
+          right--;
+        }
+      } else {
+        if (array[left].height > pivot) {
+          yield store.selectionSortSwap(left, right);
+          right--;
+          side = 'right';
+        } else {
+          left++;
+        }
       }
-      i++;
     }
-    yield store.selectionSortSwap(j, right);
-    return j;
+    yield store.setHeight(right, pivot);
+    return right;
   };
 
   return recursivePivot(array, 0, array.length - 1);
