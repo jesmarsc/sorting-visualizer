@@ -5,46 +5,6 @@ import { observer, useLocalStore } from 'mobx-react';
 import { Bar, Menu } from './components';
 import classes from './App.module.css';
 
-/*
-let context = null;
-let oscillator = null;
-let gain = null;
-let frequencyBase = 0;
-let frequencyMultiplier = 1.3;
-
-const storeProxy = new Proxy(new Store(), {
-  Height: function(target, property) {
-    if (property === 'length') {
-      return target.array.length;
-    }
-    return target.array[property];
-  },
-});
-
-const array = observable.array(
-  Array.from({ length: 500 }, () => ({
-    height: Math.floor(Math.random() * 100),
-    color: 'green',
-  }))
-);
-
-const colorChanger = observable.object({
-  set: [],
-  compare: [],
-});
-
-observe(colorChanger, change => {
-  if (change.name === 'set') {
-    change.oldValue.color = 'green';
-    change.newValue.color = 'red';
-  }
-  if (change.name === 'set') {
-    change.oldValue.color = 'green';
-    change.newValue.color = 'red';
-  }
-});
-*/
-
 class ArrayStore {
   array = [];
   currentSelection = [{}, {}];
