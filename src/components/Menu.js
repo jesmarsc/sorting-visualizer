@@ -4,13 +4,14 @@ import Select from 'react-select';
 import Slider from 'rc-slider/lib/Slider';
 import 'rc-slider/assets/index.css';
 
-import { selectionSort, mergeSort, quickSort } from '../algorithms';
+import { selectionSort, mergeSort, quickSort, bubbleSort } from '../algorithms';
 import classes from './Menu.module.css';
 
 const options = [
   { value: selectionSort, label: 'Selection Sort' },
   { value: mergeSort, label: 'Merge Sort' },
   { value: quickSort, label: 'Quick Sort' },
+  { value: bubbleSort, label: 'Bubble Sort' },
 ];
 
 const Menu = observer(({ animationStore }) => {
