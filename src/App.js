@@ -1,8 +1,9 @@
-import React, { Fragment, useCallback } from 'react';
-import Bar from './Bar';
-import classes from './App.module.css';
-import { observable, decorate } from 'mobx';
+import React, { Fragment } from 'react';
+import { observable, decorate, action } from 'mobx';
 import { observer, useLocalStore } from 'mobx-react';
+
+import { Bar, Menu } from './components';
+import classes from './App.module.css';
 
 /*
 let context = null;
@@ -44,30 +45,26 @@ observe(colorChanger, change => {
 });
 */
 
-class Store {
+class ArrayStore {
   array = [];
   currentSelection = [{}, {}];
 
   constructor(length) {
+    this.reset(length);
+  }
+
+  reset = length => {
     this.array = Array.from({ length }, () => ({
       height: Math.floor(Math.random() * 100),
       color: 'green',
     }));
+  };
 
-    /*
-
-    this.array = [
-      { height: 20, color: 'green' },
-      { height: 10, color: 'green' },
-      { height: 30, color: 'green' },
-    ];
-    */
-  }
-
-  swap = (i, j) => {
-    const temp = this.array[i];
-    this.array[i] = this.array[j];
-    this.array[j] = temp;
+  resetColor = () => {
+    this.array.forEach(bar => {
+      bar.color = 'green';
+    });
+    this.currentSelection = [{}, {}];
   };
 
   getHeight = index => {
@@ -75,20 +72,8 @@ class Store {
   };
 
   setHeight = (index, value) => {
-    let { array } = this;
-    array[index].height = value;
-    array[index].color = 'green';
-  };
-
-  mergeSortCompare = (indexOne, indexTwo) => {
-    let { array } = this;
-    array[indexOne].color = 'pink';
-    array[indexTwo].color = 'red';
-  };
-
-  selectionSortSwap = (i, j) => {
-    this.swap(i, j);
-    this.compare(i, j, 'red');
+    this.array[index].height = value;
+    this.array[index].color = 'green';
   };
 
   compare = (indexOne, indexTwo, color) => {
@@ -99,139 +84,84 @@ class Store {
     this.array[indexTwo].color = color;
     this.currentSelection = [this.array[indexOne], this.array[indexTwo]];
   };
+
+  swap = (i, j) => {
+    const temp = this.array[i].height;
+    this.array[i].height = this.array[j].height;
+    this.array[j].height = temp;
+    this.compare(i, j, 'red');
+  };
+
+  mergeSortCompare = (indexOne, indexTwo) => {
+    this.array[indexOne].color = 'pink';
+    this.array[indexTwo].color = 'red';
+  };
 }
 
-decorate(Store, { array: observable });
+decorate(ArrayStore, { array: observable });
 
-const selectionSort = function*(store) {
-  const array = store.array;
-  for (let i = 0; i < array.length; i++) {
-    let min = i;
-    for (let j = i + 1; j < array.length; j++) {
-      yield store.compare(min, j, 'red');
-      if (array[j].height < array[min].height) {
-        min = j;
-      }
-    }
-    yield store.selectionSortSwap(i, min);
+class AnimationStore {
+  generatorFunction = null;
+  generator = null;
+  isPaused = true;
+  delay = 0;
+
+  constructor(ArrayStore) {
+    this.arrayStore = ArrayStore;
   }
-};
 
-const mergeSort = store => {
-  const array = store.array;
-
-  const recursiveMerge = function*(array, left, right) {
-    if (left < right) {
-      let mid = Math.floor((left + right) / 2);
-      yield* recursiveMerge(array, left, mid);
-      yield* recursiveMerge(array, mid + 1, right);
-      yield* merge(array, left, mid, right);
+  startAnimation = generatorFunction => {
+    this.isPaused = false;
+    if (this.generatorFunction !== generatorFunction) {
+      this.generatorFunction = generatorFunction;
+      this.generator = generatorFunction(this.arrayStore);
+      this.arrayStore.resetColor();
     }
-  };
-
-  const merge = function*(array, start, mid, end) {
-    const temp = [];
-    let runner1 = start,
-      runner2 = mid + 1;
-
-    for (let i = runner1; i <= end; i++) {
-      yield store.mergeSortCompare(
-        Math.min(runner1, mid),
-        Math.min(runner2, end)
-      );
-      if (runner1 > mid) {
-        temp.push(array[runner2++].height);
-      } else if (runner2 > end) {
-        temp.push(array[runner1++].height);
-      } else if (array[runner1].height <= array[runner2].height) {
-        temp.push(array[runner1++].height);
-      } else {
-        temp.push(array[runner2++].height);
+    this.animation = setInterval(() => {
+      const action = this.generator.next();
+      if (action.done) {
+        this.arrayStore.resetColor();
+        this.pauseAnimation();
       }
-    }
-    for (let i = 0; i < temp.length; i++) {
-      yield store.setHeight(start++, temp[i]);
-    }
+    }, this.delay);
   };
 
-  return recursiveMerge(array, 0, array.length - 1);
-};
-
-const quickSort = store => {
-  const { array } = store;
-
-  const recursivePivot = function*(array, left, right) {
-    if (left < right) {
-      const pivotIndex = yield* pivot(array, left, right);
-      yield* recursivePivot(array, left, pivotIndex - 1);
-      yield* recursivePivot(array, pivotIndex + 1, right);
-    }
+  pauseAnimation = () => {
+    clearInterval(this.animation);
+    this.isPaused = true;
   };
 
-  const pivot = function*(array, left, right) {
-    const pivot = array[left].height;
-    let side = 'right';
-    while (left < right) {
-      yield store.compare(left, right, 'pink');
-      if (side === 'right') {
-        if (array[right].height < pivot) {
-          yield store.selectionSortSwap(left, right);
-          left++;
-          side = 'left';
-        } else {
-          right--;
-        }
-      } else {
-        if (array[left].height > pivot) {
-          yield store.selectionSortSwap(left, right);
-          right--;
-          side = 'right';
-        } else {
-          left++;
-        }
-      }
-    }
-    yield store.setHeight(right, pivot);
-    return right;
+  stepAnimation = () => {
+    this.generator.next();
   };
 
-  return recursivePivot(array, 0, array.length - 1);
-};
+  resetAnimation = length => {
+    this.pauseAnimation();
+    this.generatorFunction = null;
+    this.generator = null;
+    this.arrayStore.reset(length);
+  };
+}
+
+decorate(AnimationStore, {
+  generatorFunction: observable,
+  generator: observable,
+  isPaused: observable,
+  delay: observable,
+  startAnimation: action,
+  pauseAnimation: action,
+});
 
 const App = observer(() => {
-  const store = useLocalStore(() => new Store(300));
-
-  const doSorting = useCallback(
-    sortGenerator => {
-      const steps = sortGenerator(store);
-
-      const animation = setInterval(() => {
-        const action = steps.next();
-        if (action.done) {
-          clearInterval(animation);
-        }
-      }, 0);
-    },
-    [store]
-  );
+  const arrayStore = useLocalStore(() => new ArrayStore(150));
+  const animationStore = useLocalStore(() => new AnimationStore(arrayStore));
 
   return (
     <Fragment>
-      <ul className={classes.menu}>
-        <li>
-          <button onClick={() => doSorting(selectionSort)}>
-            Selection Sort
-          </button>
-        </li>
-        <li>
-          <button onClick={() => doSorting(mergeSort)}>Merge Sort</button>
-        </li>
-        <li>
-          <button onClick={() => doSorting(quickSort)}>Quick Sort</button>
-        </li>
-      </ul>
+      <Menu animationStore={animationStore} arrayStore={arrayStore} />
+
       <div className={classes.barsContainer}>
-        {store.array.map((barData, index) => {
+        {arrayStore.array.map((barData, index) => {
           return <Bar key={index} id={index} barData={barData} />;
         })}
       </div>

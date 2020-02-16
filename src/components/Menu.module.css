@@ -1,0 +1,30 @@
+.menu {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  background-color: transparent;
+  padding: 16px;
+  border-radius: 4px;
+  width: 256px;
+}
+
+.buttonList {
+  margin: 8px 0px;
+  display: flex;
+  justify-content: space-evenly;
+}
+
+.button {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: none;
+  font-size: 1rem;
+  transition: all 0.1s;
+  outline: none;
+}
+
+.button:hover {
+  box-shadow: 0px 0px 16px aqua;
+  background-color: #abe2fb;
+  cursor: pointer;
+}
