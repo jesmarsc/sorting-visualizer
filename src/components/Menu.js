@@ -4,7 +4,13 @@ import Select from 'react-select';
 import Slider from 'rc-slider/lib/Slider';
 import 'rc-slider/assets/index.css';
 
-import { selectionSort, mergeSort, quickSort, bubbleSort } from '../algorithms';
+import {
+  selectionSort,
+  mergeSort,
+  quickSort,
+  bubbleSort,
+  heapSort,
+} from '../algorithms';
 import classes from './Menu.module.css';
 
 const options = [
@@ -12,6 +18,7 @@ const options = [
   { value: mergeSort, label: 'Merge Sort' },
   { value: quickSort, label: 'Quick Sort' },
   { value: bubbleSort, label: 'Bubble Sort' },
+  { value: heapSort, label: 'Heap Sort' },
 ];
 
 const Menu = observer(({ animationStore }) => {
