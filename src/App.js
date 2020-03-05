@@ -113,7 +113,7 @@ decorate(AnimationStore, {
 });
 
 const App = observer(() => {
-  const arrayStore = useLocalStore(() => new ArrayStore(150));
+  const arrayStore = useLocalStore(() => new ArrayStore(100));
   const animationStore = useLocalStore(() => new AnimationStore(arrayStore));
 
   return (

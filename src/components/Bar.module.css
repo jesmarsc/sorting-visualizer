@@ -1,5 +1,5 @@
 .bar {
   flex-grow: 1;
-  border: 1px solid black;
+  border-right: 1px solid black;
   transition: height 0.1s;
 }

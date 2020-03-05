@@ -14,11 +14,11 @@ import {
 import classes from './Menu.module.css';
 
 const options = [
-  { value: selectionSort, label: 'Selection Sort' },
   { value: mergeSort, label: 'Merge Sort' },
   { value: quickSort, label: 'Quick Sort' },
-  { value: bubbleSort, label: 'Bubble Sort' },
   { value: heapSort, label: 'Heap Sort' },
+  { value: bubbleSort, label: 'Bubble Sort' },
+  { value: selectionSort, label: 'Selection Sort' },
 ];
 
 const Menu = observer(({ animationStore }) => {
@@ -34,7 +34,7 @@ const Menu = observer(({ animationStore }) => {
 
   const menu = useLocalStore(() => ({
     selectedOption: options[0],
-    sliderValue: 150,
+    sliderValue: 100,
     selectOnChange: selectedOption => {
       menu.selectedOption = selectedOption;
     },
@@ -60,29 +60,32 @@ const Menu = observer(({ animationStore }) => {
         value={selectedOption}
         onChange={selectOnChange}
         options={options}
+        isSearchable={false}
         placeholder="Select Algorithm..."
       />
-      <Slider
-        min={5}
-        max={300}
-        step={5}
-        value={sliderValue}
-        onChange={sliderOnChange}
-        onAfterChange={sliderAfterChange}
-        style={{ marginTop: '8px' }}
-        disabled={!isPaused}
-      />
-      <p style={{ color: 'white' }}>Size: {sliderValue}</p>
-      <Slider
-        min={0}
-        max={1000}
-        step={100}
-        value={delay}
-        onChange={value => (animationStore.delay = value)}
-        style={{ marginTop: '8px' }}
-        disabled={!isPaused}
-      />
-      <p style={{ color: 'white' }}>Delay: {delay}ms</p>
+      <div className={classes.sliders}>
+        <Slider
+          min={5}
+          max={300}
+          step={5}
+          value={sliderValue}
+          onChange={sliderOnChange}
+          onAfterChange={sliderAfterChange}
+          disabled={!isPaused}
+        />
+        <p style={{ color: 'white', marginBottom: '8px' }}>
+          Size: {sliderValue}
+        </p>
+        <Slider
+          min={0}
+          max={1000}
+          step={100}
+          value={delay}
+          onChange={value => (animationStore.delay = value)}
+          disabled={!isPaused}
+        />
+        <p style={{ color: 'white' }}>Delay: {delay}ms</p>
+      </div>
       <div className={classes.buttonList}>
         {isPaused ? (
           <button
